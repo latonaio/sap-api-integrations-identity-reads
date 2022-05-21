@@ -1,5 +1,5 @@
 # sap-api-integrations-identity-reads
-sap-api-integrations-identity-reads は、外部システム(特にエッジコンピューティング環境)をSAPと統合することを目的に、SAP API で 身元データを取得するマイクロサービスです。    
+sap-api-integrations-identity-reads は、外部システム(特にエッジコンピューティング環境)をSAPと統合することを目的に、SAP API で アイデンティティデータを取得するマイクロサービスです。    
 sap-api-integrations-identity-reads には、サンプルのAPI Json フォーマットが含まれています。   
 sap-api-integrations-identity-reads は、オンプレミス版である（＝クラウド版ではない）SAPC4HANA API の利用を前提としています。クラウド版APIを利用する場合は、ご注意ください。   
 https://api.sap.com/api/identity/overview
@@ -25,14 +25,14 @@ sap-api-integrations-identity-reads が対応する APIサービス は、次の
 ## 本レポジトリ に 含まれる API名
 sap-api-integrations-identity-reads には、次の API をコールするためのリソースが含まれています。  
 
-* Identity（身元 - 身元）
+* IdentityGetLoggedInUserInfo（アイデンティティ - アイデンティティ）
 
 ## API への 値入力条件 の 初期値
 sap-api-integrations-identity-reads において、API への値入力条件の初期値は、入力ファイルレイアウトの種別毎に、次の通りとなっています。  
 
 ### SDC レイアウト
 
-* inoutSDC.Identity.Identity（身元）
+* inoutSDC.IdentityGetLoggedInUserInfo.UserID（ユーザーID）
 
 ## SAP API Bussiness Hub の API の選択的コール
 
@@ -42,12 +42,12 @@ Latona および AION の SAP 関連リソースでは、Inputs フォルダ下�
 * sample.jsonの記載例(1)  
 
 accepter において 下記の例のように、データの種別（＝APIの種別）を指定します。  
-ここでは、"Identity" が指定されています。
+ここでは、"IdentityGetLoggedInUserInfo" が指定されています。
 
 ```
-	"api_schema": "Identity",
-	"accepter": ["Identity"],
-	"identity": "157",
+	"api_schema": "IdentityGetLoggedInUserInfo",
+	"accepter": ["IdentityGetLoggedInUserInfo"],
+	"identity_code": "ADMINISTRATION01",
 	"deleted": false
 ```
  
@@ -56,9 +56,9 @@ accepter において 下記の例のように、データの種別（＝APIの�
 全データを取得する場合、sample.json は以下のように記載します。  
 
 ```
-	"api_schema": "Identity",
+	"api_schema": "IdentityGetLoggedInUserInfo",
 	"accepter": ["All"],
-	"contract_code": "157",
+	"identity_code": "ADMINISTRATION01",
 	"deleted": false
 ```
 
@@ -68,14 +68,14 @@ accepter における データ種別 の指定に基づいて SAP_API_Caller �
 caller.go の func() 毎 の 以下の箇所が、指定された API をコールするソースコードです。  
 
 ```
-func (c *SAPAPICaller) AsyncGetIdentity(Identity string, accepter []string) {
+func (c *SAPAPICaller) AsyncGetIdentity(userID string, accepter []string) {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(accepter))
 	for _, fn := range accepter {
 		switch fn {
-		case "Identity":
+		case "IdentityGetLoggedInUserInfo":
 			func() {
-				c.Identity(Identity)
+				c.IdentityGetLoggedInUserInfo(userID)
 				wg.Done()
 			}()
 		default:
@@ -89,21 +89,55 @@ func (c *SAPAPICaller) AsyncGetIdentity(Identity string, accepter []string) {
 
 ## Output  
 本マイクロサービスでは、[golang-logging-library-for-sap](https://github.com/latonaio/golang-logging-library-for-sap) により、以下のようなデータがJSON形式で出力されます。  
-以下の sample.json の例は、SAP 身元 の 身元データ が取得された結果の JSON の例です。  
-以下の項目のうち、"XXXX" ～ "XXXX" は、/SAP_API_Output_Formatter/type.go 内 の Type Identity {} による出力結果です。"XXXX" ～ "XXXX"は、golang-logging-library-for-sap による 定型フォーマットの出力結果です。  
+以下の sample.json の例は、SAP アイデンティティ の アイデンティティデータ が取得された結果の JSON の例です。  
+以下の項目のうち、"ObjectID" ～ "EntityLastChangedOn" は、/SAP_API_Output_Formatter/type.go 内 の Type IdentityGetLoggedInUserInfo {} による出力結果です。"ObjectID" ～ "EntityLastChangedOn"は、golang-logging-library-for-sap による 定型フォーマットの出力結果です。  
 
 ```
 {
-	"cursor": "/Users/latona2/bitbucket/sap-api-integrations-identity-reads/SAP_API_Caller/caller.go#L58",
-	"function": "sap-api-integrations-identity-reads/SAP_API_Caller.(*SAPAPICaller).Identity",
+	"cursor": "/Users/latona2/bitbucket/sap-api-integrations-identity-reads/SAP_API_Caller/caller.go#L53",
+	"function": "sap-api-integrations-identity-reads/SAP_API_Caller.(*SAPAPICaller).IdentityGetLoggedInUserInfo",
 	"level": "INFO",
 	"message": [
 		{
-		XXXXXXXXXX
-		XXXXXXXXXX
+			"ObjectID": "00163E03A0701EE288BA39BD20F290B5",
+			"UserID": "ADMINISTRATION01",
+			"UserName": "Eddie Smoke",
+			"UserAccountID": "K8OGFLZEIOA",
+			"UUID": "00163E03-A070-1EE2-88BA-39BD20F290B5",
+			"EmployeeID": "E1008",
+			"BusinessPartnerID": "8000000009",
+			"EmployeeUUID": "00163E03-A070-1EE2-88BA-39BD20DA50B5",
+			"Email": "administration01@ondemand.com",
+			"DateFormatCode": "1",
+			"DateFormatCodeText": "DD.MM.YYYY",
+			"DecimalFormatCode": "",
+			"DecimalFormatCodeText": "1.234.567,89",
+			"LogonLanguageCode": "EN",
+			"LogonLanguageCodeText": "English",
+			"TimeFormatCode": "0",
+			"TimeFormatCodeText": "24-Hour Time",
+			"TimeZoneCode": "UTC",
+			"TimeZoneCodeText": "(UTC+00:00) Burkina Faso, Bouvet Islands, Cote d'Ivoire, West Sahara, Ghana, Greenland, Gambia, Guinea, Guinea-Bissau, Heard/McDon.Isl, Brit.Ind.Oc.Ter, Iceland",
+			"TechnicalUserIndicator": false,
+			"KeyUserIndicator": true,
+			"InactiveIndicator": false,
+			"PasswordInactiveIndicator": false,
+			"PasswordLockedIndicator": false,
+			"PasswordPolicyCode": "C_ALMIKA_BUSINESS_USER",
+			"PasswordPolicyCodeText": "",
+			"UserAccountTypeCode": "A",
+			"UserAccountTypeCodeText": "Dialog",
+			"StatusCode": "2",
+			"StatusCodeText": "Active",
+			"CreatedOn": "2012-10-29T09:00:00+09:00",
+			"CreatedBy": "SAP WORKER",
+			"ChangedOn": "2020-08-19T17:14:31+09:00",
+			"ChangedBy": "Eddie Smoke",
+			"CreatedByUUID": "00163E03-A070-1EE2-88B6-F539A6B028F3",
+			"ChangedByUUID": "00163E03-A070-1EE2-88BA-39BD20F290B5",
+			"EntityLastChangedOn": "2020-08-19T17:14:31+09:00"
 		}
 	],
-	"time": "2022-05-20T13:41:16+09:00"
+	"time": "2022-05-21T12:19:13+09:00"
 }
-
 ```
